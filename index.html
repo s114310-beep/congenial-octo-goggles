@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>軍團倍增攻城戰 ✕ 王國要塞防禦 (Crowd Siege & Tower Defense 3D)</title>
+  <meta name="description" content="顛覆傳統的 3D 算術倍增軍團衝鋒與多層結構建築塔防複合遊戲，具備多關卡、多種玩法與泰坦合體機制。">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- 3D Canvas WebGL Viewport -->
+  <div id="canvas-container"></div>
+
+  <!-- In-Game UI Overlay -->
+  <div id="ui-overlay">
+    <!-- Top HUD Bar -->
+    <header class="hud-top">
+      <div class="hud-left interactive">
+        <div class="brand-badge">
+          <span class="brand-icon">🏰</span>
+          <div class="brand-text">
+            <h1>CROWD SIEGE 3D</h1>
+            <span>軍團倍增攻城 ✕ 戰略要塞塔防</span>
+          </div>
+        </div>
+
+        <!-- Mode Selector Tabs -->
+        <nav class="mode-selector" aria-label="遊戲模式選擇">
+          <button class="mode-tab active" data-mode="crowd_siege">🏰 倍增攻城</button>
+          <button class="mode-tab" data-mode="tower_defense">🛡️ 王國塔防</button>
+          <button class="mode-tab" data-mode="tower_war">⚔️ 雙向對推</button>
+          <button class="mode-tab" data-mode="endless_horde">♾️ 無盡狂潮</button>
+        </nav>
+      </div>
+
+      <div class="hud-center interactive">
+        <!-- Troop Counter -->
+        <div class="stat-pill troop-counter" title="目前軍團兵力">
+          <span class="stat-icon">👥</span>
+          <div>
+            <div class="stat-val" id="hud-troops">10</div>
+            <div class="stat-label">軍團兵力</div>
+          </div>
+        </div>
+
+        <!-- Gold Counter -->
+        <div class="stat-pill gold-counter" title="軍餉金幣">
+          <span class="stat-icon">🪙</span>
+          <div>
+            <div class="stat-val" id="hud-gold">300</div>
+            <div class="stat-label">要塞金幣</div>
+          </div>
+        </div>
+
+        <!-- Current Mode Badge -->
+        <div class="mode-badge" id="hud-mode-title">
+          🏰 軍團倍增攻城戰
+        </div>
+      </div>
+
+      <div class="hud-right interactive">
+        <!-- Levels Dialog -->
+        <button class="icon-btn" id="btn-levels" title="選擇戰役關卡">🗺️</button>
+
+        <!-- Tech Tree Shop -->
+        <button class="icon-btn" id="btn-shop" title="兵種與要塞科技升級">🔬</button>
+
+        <!-- Camera Switch -->
+        <button class="icon-btn" id="btn-cam" title="切換鏡頭視角 (按V鍵)">🎥</button>
+
+        <!-- Audio Toggles -->
+        <button class="icon-btn" id="btn-sound" title="切換音效">🔊</button>
+        <button class="icon-btn" id="btn-bgm" title="切換配樂">🎵</button>
+
+        <!-- Help -->
+        <button class="icon-btn" id="btn-help" title="操作玩法說明">❓</button>
+      </div>
+    </header>
+
+    <!-- Floating Banner Notification -->
+    <div id="floating-banner" class="floating-banner">歡迎進入軍團倍增攻城戰！左右滑動控制隊伍！</div>
+
+    <!-- Onscreen Control Drag Hint -->
+    <div class="control-hint">
+      左右拖曳滑鼠或按 A / D 操控軍團 ｜ 空白鍵/1 發動泰坦合體 ｜ 按 V 切換視角
+    </div>
+
+    <!-- Bottom HUD (Tower Deck & Tactical Skills) -->
+    <footer class="hud-bottom interactive">
+      <!-- Tower Deck (Active in Tower Defense & Siege Support) -->
+      <div class="tower-deck" id="tower-deck">
+        <div class="tower-card selected" data-tower="archer" title="射速極快，配備高台弓弩手">
+          <div class="tower-thumb">🏹</div>
+          <div class="tower-title">皇家連弩塔</div>
+          <div class="tower-cost">🪙 100</div>
+        </div>
+        <div class="tower-card" data-tower="cannon" title="重型金屬雙聯加農砲，群體爆炸傷害">
+          <div class="tower-thumb">💣</div>
+          <div class="tower-title">重裝加農砲</div>
+          <div class="tower-cost">🪙 180</div>
+        </div>
+        <div class="tower-card" data-tower="frost" title="懸浮極晶核心，大範圍減速冰風暴">
+          <div class="tower-thumb">❄️</div>
+          <div class="tower-title">永凍冰晶塔</div>
+          <div class="tower-cost">🪙 150</div>
+        </div>
+        <div class="tower-card" data-tower="tesla" title="特斯拉高壓線圈，連鎖閃電打擊">
+          <div class="tower-thumb">⚡</div>
+          <div class="tower-title">特斯拉電漿塔</div>
+          <div class="tower-cost">🪙 220</div>
+        </div>
+      </div>
+
+      <!-- Tactical Skills Bar -->
+      <div class="skills-bar">
+        <!-- Skill 1: Titan Fusion -->
+        <div class="skill-slot" id="skill-titan" title="消耗 20 名士兵融合召喚鋼鐵巨神兵！">
+          <div class="skill-cooldown-overlay" id="cd-titan"></div>
+          <span class="skill-hotkey">1 / 空白</span>
+          <span class="skill-icon">🦾</span>
+          <span class="skill-name">泰坦合體</span>
+        </div>
+
+        <!-- Skill 2: Polar Inversion -->
+        <div class="skill-slot" id="skill-invert" title="將前方負數除法門反轉為 X3 增幅光門！">
+          <div class="skill-cooldown-overlay" id="cd-invert"></div>
+          <span class="skill-hotkey">2</span>
+          <span class="skill-icon">🌀</span>
+          <span class="skill-name">極性反轉</span>
+        </div>
+
+        <!-- Skill 3: Meteor Strike -->
+        <div class="skill-slot" id="skill-meteor" title="召喚天降神罰流星轟炸前方敵軍要塞！">
+          <div class="skill-cooldown-overlay" id="cd-meteor"></div>
+          <span class="skill-hotkey">3</span>
+          <span class="skill-icon">☄️</span>
+          <span class="skill-name">天降流星</span>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- MODALS -->
+
+  <!-- 1. Level Select Modal -->
+  <div class="modal-backdrop" id="modal-levels">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h2 class="modal-title">🗺️ 選擇戰役關卡</h2>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div class="level-grid" id="level-grid"></div>
+    </div>
+  </div>
+
+  <!-- 3. Tech Tree Modal -->
+  <div class="modal-backdrop" id="modal-shop">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h2 class="modal-title">🔬 軍團與要塞科技天賦</h2>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div class="tech-grid" id="tech-list"></div>
+    </div>
+  </div>
+
+  <!-- 4. Help / Controls Modal -->
+  <div class="modal-backdrop" id="modal-help">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h2 class="modal-title">❓ 遊戲玩法與操作指南</h2>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div style="line-height: 1.8; color: #cbd5e1; font-size: 0.9rem;">
+        <p><strong>🎯 遊戲核心目標：</strong></p>
+        <p>在賽道上左右移動軍團，選擇數值最大的「倍增光門」（如 X6、+50），避開旋轉電鋸陷阱與敵方伏擊部隊，集結海量兵力推倒終點的敵方複合防衛要塞！</p>
+        <br>
+        <p><strong>🎮 操控快捷鍵：</strong></p>
+        <ul style="padding-left: 20px;">
+          <li><strong>A / D 或 左右方向鍵 / 滑鼠左右拖曳：</strong> 左右轉向操控軍團移動</li>
+          <li><strong>空白鍵 / 數字鍵 1：</strong> 泰坦合體 (消耗 20 名步兵召喚鋼鐵巨神兵)</li>
+          <li><strong>數字鍵 2：</strong> 極性反轉 (將前方負數除法門轉化為 X3 增幅光門)</li>
+          <li><strong>數字鍵 3：</strong> 天降流星 (天際隕石轟炸消滅前方部隊)</li>
+          <li><strong>V 鍵：</strong> 切換視角 (跑酷跟隨 ⇄ 等軸戰術 ⇄ 上帝俯瞰)</li>
+        </ul>
+        <br>
+        <p><strong>🛡️ 模式二：王國塔防說明：</strong></p>
+        <p>切換至【王國塔防】模式，點選底部防禦塔卡片，再點選地圖兩側的圓形插槽建造防禦塔，抵禦一波波洶湧來襲的敵軍！</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Victory Modal -->
+  <div class="modal-backdrop" id="modal-victory">
+    <div class="modal-window" style="text-align: center;">
+      <h2 class="modal-title" style="justify-content: center; font-size: 2rem;">🏆 關卡攻克大捷！</h2>
+      <p style="color: #cbd5e1; margin: 16px 0; font-size: 1.1rem;">
+        敵方防衛要塞巨塔已全面崩塌，獲得星級評價：<span style="color: #f59e0b; font-weight: 800;">★★★</span>
+      </p>
+      <div style="display: flex; gap: 12px; justify-content: center; margin-top: 24px;">
+        <button class="btn-primary" id="btn-next-level">下一關卡 ➔</button>
+        <button class="btn-primary" id="btn-retry-victory" style="background: rgba(30, 41, 59, 0.8);">重新遊玩</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. Game Over Modal -->
+  <div class="modal-backdrop" id="modal-gameover">
+    <div class="modal-window" style="text-align: center;">
+      <h2 class="modal-title" style="justify-content: center; font-size: 2rem; color: #ef4444;">💀 軍團全滅</h2>
+      <p style="color: #cbd5e1; margin: 16px 0;">
+        部隊在陷阱與砲火中折損殆盡！請精確計算倍增門與釋放戰術技能！
+      </p>
+      <div style="display: flex; gap: 12px; justify-content: center; margin-top: 24px;">
+        <button class="btn-primary" id="btn-retry-gameover">重新挑戰</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPTS -->
+  <script src="lib/three.min.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/models.js"></script>
+  <script src="js/levels.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
